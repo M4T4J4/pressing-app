@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->text('description')->nullable();
-            $table->decimal('price', 8, 2)->nullable();
+            $table->decimal('price', 8,   2)->nullable();
             $table->timestamps();
         });
     }
@@ -28,3 +28,4 @@ return new class extends Migration
         Schema::dropIfExists('services');
     }
 };
+

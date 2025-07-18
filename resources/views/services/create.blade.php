@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ajouter un Nouveau Service - {{ config('app.name') }}</title>
+    <link href="{{ asset('bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <script src="{{ asset('bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <style>
         body {
             font-family: sans-serif;
@@ -104,7 +106,7 @@
 
         {{-- Lien de retour vers la liste des services --}}
         <a href="{{ route('services.index') }}" class="nav-link back">Retour à la liste des services</a>
-        
+
         {{-- Message de succès si le service a été ajouté --}}
         @if (session('success'))
             <div class="alert-success">

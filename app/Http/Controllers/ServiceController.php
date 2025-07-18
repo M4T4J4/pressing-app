@@ -28,7 +28,8 @@ class ServiceController extends Controller
             'name' => 'required|string|max:255', // Nom requis, chaîne de caractères, max 255 caractères
             'description' => 'nullable|string', // Description optionnelle, chaîne de caractères
             'price' => 'nullable|numeric|min:0', // Prix optionnel, numérique, doit être >= 0
-        ], [
+        ],
+        [
             'name.required' => 'Le nom du service est obligatoire.',
             'name.string' => 'Le nom doit être une chaîne de caractères.',
             'name.max' => 'Le nom ne doit pas dépasser 255 caractères.',
