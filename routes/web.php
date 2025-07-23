@@ -2,35 +2,33 @@
 
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ServiceController; // AJOUTEZ CETTE LIGNE
-use App\Http\Controllers\ClientController;  // AJOUTEZ CETTE LIGNE
-use App\Http\Controllers\OrderController;   // AJOUTEZ CETTE LIGNE
+// Assurez-vous que ces lignes sont bien présentes en haut de votre fichier routes/web.php
+use App\Http\Controllers\ClientController; 
+use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\OrderController;
 
+// Route d'accueil (peut-être déjà là)
 Route::get('/', function () {
     return view('welcome');
 });
 
-// Inclut les routes d'authentification générées par Breeze (login, register, logout, etc.)
-require __DIR__.'/auth.php';
-
-// Grouper les routes qui nécessitent une authentification
-// Le middleware 'auth' s'assure que l'utilisateur est connecté.
-// Le middleware 'verified' (optionnel, si vous l'utilisez) s'assure que l'e-mail de l'utilisateur a été vérifié.
+// Groupe de routes nécessitant une authentification et/ou vérification d'email
 Route::middleware(['auth', 'verified'])->group(function () {
-    // Redirige le tableau de bord vers la liste des commandes après connexion
+    // Redirige /dashboard vers /orders (ou votre page d'accueil principale)
+    // C'est une bonne pratique pour votre application de pressing
     Route::redirect('/dashboard', '/orders')->name('dashboard');
 
-    // Routes pour les Services
-    Route::resource('services', ServiceController::class); // AJOUTEZ CETTE LIGNE
+    // Définition des routes de ressources avec leurs middlewares de permission
+    // Le middleware 'permission:...' est appliqué ici directement sur la ressource
+    Route::resource('clients', ClientController::class)->middleware('permission:manage clients');
+    Route::resource('services', ServiceController::class)->middleware('permission:manage services');
+    Route::resource('orders', OrderController::class)->middleware('permission:manage orders');
 
-    // Routes pour les Clients
-    Route::resource('clients', ClientController::class);   // AJOUTEZ CETTE LIGNE
-
-    // Routes pour les Commandes
-    Route::resource('orders', OrderController::class);     // AJOUTEZ CETTE LIGNE
-    
-    // Routes de profil générées par Breeze
+    // Vos routes de profil existantes
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+// N'oubliez pas d'inclure les routes d'authentification de Breeze
+require __DIR__.'/auth.php';
