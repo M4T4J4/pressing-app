@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ServiceController;
 use Illuminate\Support\Facades\Route;
 
@@ -7,10 +8,11 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/services', [ServiceController::class, 'index'])->name('services.index');
 
-// Route pour afficher le formulaire d'ajout d'un nouveau service
-Route::get('/services/create', [ServiceController::class, 'create'])->name('services.create');
+// Utilisez Route::resource pour gérer toutes les routes CRUD pour les services
+// Cela remplace Route::get('/services', [ServiceController::class, 'index'])->name('services.index');
+// et toutes les autres routes CRUD (create, store, show, edit, update, destroy)
+Route::resource('services', ServiceController::class);
 
-// Route pour soumettre le formulaire et sauvegarder le nouveau service
-Route::post('/services', [ServiceController::class, 'store'])->name('services.store');
+// Routes pour les Clients
+Route::resource('clients', ClientController::class);
