@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use App\Http\Controllers\Controller; // Assurez-vous que cette ligne est présente
 use App\Models\Client;
 use Illuminate\Http\Request;
 

@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Service;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller; // Assurez-vous que cette ligne est présente
 
 class ServiceController extends Controller
 {
+
     public function index()
     {
         $services = Service::all(); // Récupère tous les services de la base de données
@@ -101,4 +103,5 @@ class ServiceController extends Controller
 
     // Nous n'avons pas besoin de la méthode 'show' pour l'instant
     // public function show(Service $service) { /* ... */ }
+
 }
