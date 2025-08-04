@@ -6,11 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo; // Importer BelongsTo
 use Illuminate\Database\Eloquent\Relations\BelongsToMany; // Importer BelongsToMany
-
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class Order extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $fillable = [
         'client_id',
@@ -44,5 +45,13 @@ class Order extends Model
         // Les troisième et quatrième paramètres sont les noms des clés étrangères sur la table pivot
         return $this->belongsToMany(Service::class, 'order_service')
                     ->withPivot('quantity', 'price_at_order'); // Inclure les colonnes de la table pivot
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logFillable()
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
     }
 }

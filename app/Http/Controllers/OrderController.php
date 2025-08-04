@@ -34,50 +34,18 @@ class OrderController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+   public function store(Request $request)
     {
         try {
-            // 1. Validation des données de la commande principale
+            // ... (1. Validation des données de la commande principale) ...
             $validatedOrderData = $request->validate([
-                'client_id' => 'required|exists:clients,id',
-                'pickup_date' => 'nullable|date',
-                'delivery_date' => 'nullable|date|after_or_equal:pickup_date',
-                'notes' => 'nullable|string',
-                'services' => 'required|array|min:1', // Doit avoir au moins un service
-                'services.*.service_id' => 'required|exists:services,id', // Chaque service_id doit exister
-                'services.*.quantity' => 'required|integer|min:1', // Chaque quantité doit être un entier > 0
-            ], [
-                'client_id.required' => 'Veuillez sélectionner un client.',
-                'client_id.exists' => 'Le client sélectionné n\'existe pas.',
-                'delivery_date.after_or_equal' => 'La date de livraison ne peut pas être antérieure à la date de prise en charge.',
-                'services.required' => 'Veuillez ajouter au moins un service à la commande.',
-                'services.min' => 'Veuillez ajouter au moins un service à la commande.',
-                'services.*.service_id.required' => 'Le service est obligatoire.',
-                'services.*.service_id.exists' => 'Le service sélectionné n\'existe pas.',
-                'services.*.quantity.required' => 'La quantité est obligatoire pour chaque service.',
-                'services.*.quantity.integer' => 'La quantité doit être un nombre entier.',
-                'services.*.quantity.min' => 'La quantité doit être d\'au moins 1.',
+                // ... (vos règles de validation) ...
             ]);
 
-            // 2. Calcul du total de la commande et préparation des données pour la table pivot
+            // ... (2. Calcul du total de la commande et préparation des données) ...
             $totalAmount = 0;
             $orderServices = [];
-
-            foreach ($validatedOrderData['services'] as $item) {
-                $service = Service::find($item['service_id']);
-                if (!$service) {
-                    // Ceci ne devrait pas arriver grâce à 'exists:services,id', mais c'est une sécurité
-                    throw ValidationException::withMessages(['services' => 'Un service sélectionné n\'existe pas.']);
-                }
-
-                $subtotal = $service->price * $item['quantity'];
-                $totalAmount += $subtotal;
-
-                $orderServices[$service->id] = [
-                    'quantity' => $item['quantity'],
-                    'price_at_order' => $service->price, // Enregistre le prix du service au moment de la commande
-                ];
-            }
+            // ... (votre boucle foreach pour le calcul du total) ...
 
             // 3. Création de la commande principale
             $order = Order::create([
@@ -87,6 +55,8 @@ class OrderController extends Controller
                 'delivery_date' => $validatedOrderData['delivery_date'],
                 'notes' => $validatedOrderData['notes'],
                 'total_amount' => $totalAmount, // Le total calculé
+                // AJOUTEZ LA LIGNE ICI pour attribuer l'ID de l'utilisateur
+                'user_id' => auth()->user()->id,
             ]);
 
             // 4. Attacher les services à la commande via la table pivot

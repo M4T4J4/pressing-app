@@ -112,4 +112,17 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Authentication Paths
+    |--------------------------------------------------------------------------
+    |
+    | Here you may define the paths to redirect users after authentication.
+    |
+    */
+
+    'paths' => [
+        'home' => '/dashboard', // C'est ici que l'on va rediriger après login.
+    ],
+    
 ];
