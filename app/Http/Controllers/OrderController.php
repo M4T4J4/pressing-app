@@ -14,12 +14,32 @@ class OrderController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
-    {
-        // Charge les commandes avec leurs clients et services associés pour éviter les requêtes N+1
-        $orders = Order::with(['client', 'services'])->latest()->get();
-        return view('orders.index', compact('orders'));
+public function index(Request $request)
+{
+    // Récupère le statut de la requête, par défaut 'En attente'
+    $status = $request->input('status', 'En attente');
+
+    // Initialise la requête
+    $query = Order::with(['client', 'services'])->latest();
+
+    // Applique le filtre de statut si un statut est spécifié
+    if ($status === 'all') {
+        // Affiche toutes les commandes
+        $orders = $query->get();
+    } elseif ($status === 'Prête') {
+        // Affiche seulement les commandes 'Prête'
+        $orders = $query->where('status', 'Prête')->get();
+    } elseif ($status === 'Terminée' || $status === 'Annulée') {
+        // Affiche les commandes terminées et annulées
+        $orders = $query->whereIn('status', ['Terminée', 'Annulée'])->get();
+    } else {
+        // Par défaut, affiche les commandes 'En attente'
+        $orders = $query->where('status', 'En attente')->get();
     }
+
+    // Passe la variable de statut actuelle à la vue pour surligner le bouton
+    return view('orders.index', compact('orders', 'status'));
+}
 
     /**
      * Show the form for creating a new resource.
@@ -35,154 +55,145 @@ class OrderController extends Controller
      * Store a newly created resource in storage.
      */
    public function store(Request $request)
-    {
-        try {
-            // ... (1. Validation des données de la commande principale) ...
-            $validatedOrderData = $request->validate([
-                // ... (vos règles de validation) ...
-            ]);
+{
+    try {
+        // Validation des données de la commande principale
+        $validatedOrderData = $request->validate([
+            'client_id' => 'required|exists:clients,id',
+            'pickup_date' => 'nullable|date',
+            'delivery_date' => 'nullable|date|after_or_equal:pickup_date',
+            'notes' => 'nullable|string',
+            'services' => 'required|array|min:1',
+            'services.*.service_id' => 'required|exists:services,id',
+            'services.*.quantity' => 'required|integer|min:1',
+        ], [
+            'client_id.required' => 'Veuillez sélectionner un client.',
+            'services.required' => 'Veuillez ajouter au moins un service à la commande.',
+            'services.min' => 'Veuillez ajouter au moins un service à la commande.',
+            'services.*.service_id.required' => 'Un service est manquant.',
+            'services.*.quantity.required' => 'La quantité est obligatoire pour chaque service.'
+        ]);
 
-            // ... (2. Calcul du total de la commande et préparation des données) ...
-            $totalAmount = 0;
-            $orderServices = [];
-            // ... (votre boucle foreach pour le calcul du total) ...
+        // 2. Calcul du total et préparation des données pour la table pivot
+        $totalAmount = 0;
+        $orderServices = [];
 
-            // 3. Création de la commande principale
-            $order = Order::create([
-                'client_id' => $validatedOrderData['client_id'],
-                'status' => 'En attente', // Statut par défaut
-                'pickup_date' => $validatedOrderData['pickup_date'],
-                'delivery_date' => $validatedOrderData['delivery_date'],
-                'notes' => $validatedOrderData['notes'],
-                'total_amount' => $totalAmount, // Le total calculé
-                // AJOUTEZ LA LIGNE ICI pour attribuer l'ID de l'utilisateur
-                'user_id' => auth()->user()->id,
-            ]);
+        foreach ($validatedOrderData['services'] as $item) {
+            $service = Service::find($item['service_id']);
 
-            // 4. Attacher les services à la commande via la table pivot
-            $order->services()->attach($orderServices);
-
-            // 5. Redirection avec un message de succès
-            return redirect()->route('orders.index')->with('success', 'Commande ajoutée avec succès !');
-
-        } catch (ValidationException $e) {
-            return redirect()->back()->withErrors($e->errors())->withInput();
-        } catch (\Exception $e) {
-            // Gérer d'autres erreurs inattendues
-            return redirect()->back()->with('error', 'Une erreur inattendue est survenue lors de l\'ajout de la commande.')->withInput();
-        }
-    }
-
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Order $order)
-    {
-        // Pour l'instant, nous n'avons pas de vue 'show' dédiée pour une seule commande,
-        // mais la méthode est là si besoin plus tard.
-        // return view('orders.show', compact('order'));
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Order $order)
-    {
-        $clients = Client::all();
-        $services = Service::all();
-        // Récupère les services déjà attachés à cette commande avec leurs pivots
-        $orderServices = $order->services->keyBy('id')->map(function ($service) {
-            return [
-                'service_id' => $service->id,
-                'quantity' => $service->pivot->quantity,
-                'price_at_order' => $service->pivot->price_at_order,
-            ];
-        })->toArray();
-
-        return view('orders.edit', compact('order', 'clients', 'services', 'orderServices'));
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Order $order)
-    {
-        try {
-            // 1. Validation des données de la commande principale
-            $validatedOrderData = $request->validate([
-                'client_id' => 'required|exists:clients,id',
-                'status' => 'required|string|in:En attente,En cours,Prête,Terminée,Annulée', // Valider le statut
-                'pickup_date' => 'nullable|date',
-                'delivery_date' => 'nullable|date|after_or_equal:pickup_date',
-                'notes' => 'nullable|string',
-                'services' => 'required|array|min:1',
-                'services.*.service_id' => 'required|exists:services,id',
-                'services.*.quantity' => 'required|integer|min:1',
-            ], [
-                'client_id.required' => 'Veuillez sélectionner un client.',
-                'client_id.exists' => 'Le client sélectionné n\'existe pas.',
-                'status.required' => 'Le statut de la commande est obligatoire.',
-                'status.in' => 'Le statut de la commande n\'est pas valide.',
-                'delivery_date.after_or_equal' => 'La date de livraison ne peut pas être antérieure à la date de prise en charge.',
-                'services.required' => 'Veuillez ajouter au moins un service à la commande.',
-                'services.min' => 'Veuillez ajouter au moins un service à la commande.',
-                'services.*.service_id.required' => 'Le service est obligatoire.',
-                'services.*.service_id.exists' => 'Le service sélectionné n\'existe pas.',
-                'services.*.quantity.required' => 'La quantité est obligatoire pour chaque service.',
-                'services.*.quantity.integer' => 'La quantité doit être un nombre entier.',
-                'services.*.quantity.min' => 'La quantité doit être d\'au moins 1.',
-            ]);
-
-            // 2. Calcul du total de la commande et préparation des données pour la table pivot
-            $totalAmount = 0;
-            $orderServices = [];
-
-            foreach ($validatedOrderData['services'] as $item) {
-                $service = Service::find($item['service_id']);
-                if (!$service) {
-                    throw ValidationException::withMessages(['services' => 'Un service sélectionné n\'existe pas.']);
-                }
-
-                $subtotal = $service->price * $item['quantity'];
-                $totalAmount += $subtotal;
-
-                $orderServices[$service->id] = [
-                    'quantity' => $item['quantity'],
-                    'price_at_order' => $service->price,
-                ];
+            if (!$service) {
+                // En cas de service introuvable, on lève une erreur de validation
+                throw ValidationException::withMessages(['services' => 'Un service sélectionné n\'existe pas.']);
             }
 
-            // 3. Mise à jour de la commande principale
-            $order->update([
-                'client_id' => $validatedOrderData['client_id'],
-                'status' => $validatedOrderData['status'],
-                'pickup_date' => $validatedOrderData['pickup_date'],
-                'delivery_date' => $validatedOrderData['delivery_date'],
-                'notes' => $validatedOrderData['notes'],
-                'total_amount' => $totalAmount,
-            ]);
+            $subtotal = $service->price * $item['quantity'];
+            $totalAmount += $subtotal;
 
-            // 4. Synchroniser les services attachés à la commande
-            // 'sync' va détacher les services qui ne sont plus dans la liste et attacher/mettre à jour ceux qui le sont.
-            $order->services()->sync($orderServices);
-
-            // 5. Redirection avec un message de succès
-            return redirect()->route('orders.index')->with('success', 'Commande mise à jour avec succès !');
-
-        } catch (ValidationException $e) {
-            return redirect()->back()->withErrors($e->errors())->withInput();
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Une erreur inattendue est survenue lors de la mise à jour de la commande.')->withInput();
+            $orderServices[$service->id] = [
+                'quantity' => $item['quantity'],
+                'price_at_order' => $service->price,
+            ];
         }
+
+        // 3. Création de la commande principale
+        $order = Order::create([
+            'client_id' => $validatedOrderData['client_id'],
+            'status' => 'En attente',
+            'pickup_date' => $validatedOrderData['pickup_date'],
+            'delivery_date' => $validatedOrderData['delivery_date'],
+            'notes' => $validatedOrderData['notes'],
+            'total_amount' => $totalAmount,
+            'user_id' => auth()->user()->id,
+        ]);
+
+        // 4. Attacher les services à la commande
+        $order->services()->attach($orderServices);
+
+        return redirect()->route('orders.index')->with('success', 'Commande ajoutée avec succès !');
+
+    } catch (ValidationException $e) {
+        return redirect()->back()->withErrors($e->errors())->withInput();
+    } catch (\Exception $e) {
+        // Gérer d'autres erreurs inattendues (ex: échec de l'enregistrement en DB)
+        // Vous pouvez logguer l'erreur pour la déboguer plus tard
+        \Log::error('Erreur lors de la création de la commande : ' . $e->getMessage());
+        return redirect()->back()->with('error', 'Une erreur inattendue est survenue. ' . $e->getMessage())->withInput();
+    }
+}
+
+/**
+ * Update the specified resource in storage.
+ */
+public function update(Request $request, Order $order)
+{
+    // 1. Validation des données de la commande principale
+    $validatedData = $request->validate([
+        'client_id' => 'required|exists:clients,id',
+        'status' => 'required|in:En attente,En cours,Prête,Terminée,Annulée',
+        'pickup_date' => 'nullable|date',
+        'delivery_date' => 'nullable|date|after_or_equal:pickup_date',
+        'notes' => 'nullable|string',
+        'services' => 'required|array|min:1',
+        'services.*.service_id' => 'required|exists:services,id',
+        'services.*.quantity' => 'required|integer|min:1',
+    ]);
+
+    // 2. Calcul du total et synchronisation des services
+    $totalAmount = 0;
+    $orderServices = [];
+
+    foreach ($validatedData['services'] as $item) {
+        $service = Service::find($item['service_id']);
+
+        if (!$service) {
+            // Gérer l'erreur si un service n'existe pas
+            return redirect()->back()->with('error', 'Un service sélectionné n\'existe pas.')->withInput();
+        }
+
+        $subtotal = $service->price * $item['quantity'];
+        $totalAmount += $subtotal;
+
+        $orderServices[$service->id] = [
+            'quantity' => $item['quantity'],
+            'price_at_order' => $service->price,
+        ];
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Order $order)
-    {
-        $order->delete();
-        return redirect()->route('orders.index')->with('success', 'Commande supprimée avec succès !');
-    }
+    // 3. Mise à jour de la commande principale
+    $order->update([
+        'client_id' => $validatedData['client_id'],
+        'status' => $validatedData['status'],
+        'pickup_date' => $validatedData['pickup_date'],
+        'delivery_date' => $validatedData['delivery_date'],
+        'notes' => $validatedData['notes'],
+        'total_amount' => $totalAmount,
+    ]);
+
+    // 4. Synchronisation des services (met à jour la table pivot)
+    $order->services()->sync($orderServices);
+
+    return redirect()->route('orders.index')->with('success', 'Commande mise à jour avec succès !');
+}
+
+public function edit(Order $order)
+{
+    $clients = Client::all();
+    $services = Service::all();
+
+    // Récupère les services de la commande avec leurs quantités de la table pivot
+    $orderServices = $order->services()->withPivot('quantity')->get();
+
+    return view('orders.edit', compact('order', 'clients', 'services', 'orderServices'));
+}
+/**
+ * Remove the specified resource from storage.
+ */
+public function destroy(Order $order)
+{
+    // Supprime la commande de la base de données
+    $order->delete();
+
+    // Redirige avec un message de succès
+    return redirect()->route('orders.index')->with('success', 'Commande supprimée avec succès !');
+}
 }

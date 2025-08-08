@@ -20,5 +20,23 @@
     },
     "dependencies": {
         "chart.js": "^4.5.0"
-    }
+    },
+    "name": "pressing-app",
+    "version": "1.0.0",
+    "description": "<p align=\"center\"><a href=\"https://laravel.com\" target=\"_blank\"><img src=\"https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg\" width=\"400\" alt=\"Laravel Logo\"></a></p>",
+    "main": "postcss.config.js",
+    "directories": {
+        "test": "tests"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/M4T4J4/pressing-app.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/M4T4J4/pressing-app/issues"
+    },
+    "homepage": "https://github.com/M4T4J4/pressing-app#readme"
 }

@@ -1,6 +1,8 @@
 <?php
 
 namespace Database\Seeders;
+use Spatie\Permission\Models\Role;    
+use Spatie\Permission\Models\Permission;
 
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -20,5 +22,12 @@ class DatabaseSeeder extends Seeder
         //     'name' => 'Test User',
         //     'email' => 'test@example.com',
         // ]);
+
+        // Crée la permission "manage caisse"
+    $caissePermission = Permission::firstOrCreate(['name' => 'manage caisse']);
+
+        // Récupère le rôle 'employee' et lui attribue la permission
+        $employeeRole = Role::firstOrCreate(['name' => 'employee']);
+        $employeeRole->givePermissionTo($caissePermission);
     }
 }

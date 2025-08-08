@@ -8,6 +8,8 @@
     <link href="{{ asset('assets/lib/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
     <link href="{{ asset('assets/lib/fontawesome/css/all.min.css') }}" rel="stylesheet">
 
+    @vite('resources/js/app.js')
+
     <style>
         body {
             background-color: #f8f9fa;
@@ -74,7 +76,7 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <a class="navbar-brand me-auto" href="{{ route('dashboard') }}">Pressing App</a>
-            
+
             <div class="collapse navbar-collapse" id="sidebarMenu">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
@@ -104,57 +106,66 @@
                         <i class="fas fa-home"></i> Tableau de Bord
                     </a>
                 </li>
-                
-{{-- Liens pour les utilisateurs avec les permissions nécessaires --}}
-@can('manage orders')
-    <li class="nav-item">
-        <a class="nav-link" href="{{ route('orders.index') }}">
-            <i class="fas fa-clipboard-list"></i> Gérer les Commandes
-        </a>
-    </li>
-@endcan
 
-@can('manage clients')
-    <li class="nav-item">
-        <a class="nav-link" href="{{ route('clients.index') }}">
-            <i class="fas fa-users"></i> Gérer les Clients
-        </a>
-    </li>
-@endcan
+                {{-- Liens accessibles aux employés et aux administrateurs --}}
+                @canany(['manage orders', 'manage clients', 'manage caisse'])
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('orders.index') }}">
+                            <i class="fas fa-clipboard-list"></i> Gérer les Commandes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('clients.index') }}">
+                            <i class="fas fa-users"></i> Gérer les Clients
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('checkout.index') }}">
+                            <i class="fas fa-cash-register"></i> Caisse
+                        </a>
+                    </li>
+                @endcanany
 
-@can('manage services')
-    <li class="nav-item">
-        <a class="nav-link" href="{{ route('services.index') }}">
-            <i class="fas fa-tshirt"></i> Gérer les Services
-        </a>
-    </li>
-@endcan
+                {{-- Liens accessibles uniquement aux administrateurs --}}
+                @can('manage users')
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('users.index') }}">
+                            <i class="fas fa-user-cog"></i> Gérer les Utilisateurs
+                        </a>
+                    </li>
+                @endcan
 
-@can('manage users')
-    <li class="nav-item">
-        <a class="nav-link" href="{{ route('users.index') }}">
-            <i class="fas fa-user-cog"></i> Gérer les Utilisateurs
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" href="{{ route('activity-log.index') }}">
-            <i class="fas fa-history"></i> Journal d'Activité
-        </a>
-    </li>
-@endcan
+                @can('manage activity')
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('activity-log.index') }}">
+                            <i class="fas fa-history"></i> Journal d'Activité
+                        </a>
+                    </li>
+                @endcan
 
-{{-- ... (autres liens) ... --}}
+                @can('manage services')
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('services.index') }}">
+                            <i class="fas fa-tshirt"></i> Gérer les Services
+                        </a>
+                    </li>
+                @endcan
 
-@can('manage expenses')
-    <li class="nav-item">
-        <a class="nav-link" href="{{ route('expenses.index') }}">
-            <i class="fas fa-coins"></i> Gérer les Dépenses
-        </a>
-    </li>
-@endcan
+                @can('manage expenses')
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('expenses.index') }}">
+                            <i class="fas fa-coins"></i> Gérer les Dépenses
+                        </a>
+                    </li>
+                @endcan
 
-{{-- ... (liens pour la gestion des utilisateurs) ... --}}
-                {{-- Vous pouvez ajouter d'autres liens ici pour d'autres rôles --}}
+                @can('manage history')
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('history.index') }}">
+                            <i class="fas fa-trash-alt"></i> Purger l'Historique
+                        </a>
+                    </li>
+                @endcan
             </ul>
         </div>
 

@@ -14,13 +14,10 @@ class Order extends Model
     use HasFactory, LogsActivity;
 
     protected $fillable = [
-        'client_id',
-        'status',
-        'pickup_date',
-        'delivery_date',
-        'total_amount',
-        'notes',
-    ];
+    'client_id', 'status', 'pickup_date', 'delivery_date', 'notes', 'total_amount', 'user_id',
+    'paid', // <-- Nouvelle colonne
+    'paid_by_user_id' // <-- Nouvelle colonne
+];
 
     // Ces attributs seront automatiquement castés en instances Carbon
     protected $casts = [
